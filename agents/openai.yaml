@@ -1,4 +1,4 @@
 interface:
   display_name: "Clearwriter"
-  short_description: "Make writing clear, natural, and logically sound"
+  short_description: "Make writing clear, natural, and logically precise"
   default_prompt: "Use $clearwriter to rewrite this text with clear, simple language and consistent logic."
