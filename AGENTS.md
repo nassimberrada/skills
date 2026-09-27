@@ -1,31 +1,29 @@
 # Guide for agents
 
-This file explains how to change Clearwriter without breaking its package or prompt.
+This file explains how to change the skills collection without breaking its package or prompts.
 
 ## What this repo contains
 
-Clearwriter is an agent skill written in Markdown. `SKILL.md` is the prompt that agents read. The repo has no build step.
+This repository is a collection of agent skills written in Markdown. Each skill lives in `skills/<skill-name>/SKILL.md`. The repo has no build step.
 
 Keep the skill portable. Do not write instructions that limit it to one or two agent tools.
 
 ## Key files
 
-- `SKILL.md` is the source of truth and the repo's only skill file. It contains portable YAML metadata, an account of why AI text sounds the way it does, and numbered patterns grouped in five sections and ordered by strength and frequency.
+- `skills/` contains one directory per skill. Each directory has a required `SKILL.md` and may have `agents/`, `scripts/`, `references/`, or `assets/`.
 - `README.md` explains installation, use, patterns, and version history.
-- `.claude-plugin/plugin.json` describes the Claude plugin and points its skill loader at the root `SKILL.md`.
-- `.claude-plugin/marketplace.json` lets users add this repo as a Claude marketplace.
-- `agents/openai.yaml` holds the display name, short description, and default prompt for OpenAI-compatible agents.
-- `scripts/validate-package.py` checks package files and shared values.
+- A skill's `agents/openai.yaml` holds optional UI metadata for OpenAI-compatible agents.
+- `scripts/validate-package.py` checks every skill's frontmatter and package structure.
 
 ## Rules for changes
 
-Keep `SKILL.md` and `README.md` in sync.
+Keep each skill's `SKILL.md` and the relevant README sections in sync.
 
 - **Patterns:** Patterns are numbered from 1 without gaps, strongest and most frequent first. A new tell earns a pattern only when no existing pattern already implies it; prefer folding it into an existing pattern. If you add, remove, or renumber a pattern, update the README tables, the README section title, and every §reference. The validator derives the count from the headings.
-- **Version:** Keep the same version in `SKILL.md` under `metadata.version`, the first README version entry, and `.claude-plugin/plugin.json`. Do not add a top-level `version` field to the skill.
+- **Version:** Keep each skill's version in its own `SKILL.md` under `metadata.version`. If a provider manifest declares a version, keep it in sync with that skill.
 - **Compatibility:** Keep install and use instructions neutral across agents. Names such as Claude Code, OpenCode, and Codex are examples, not limits.
 - **History:** Add a short README version note for any behavior change or non-obvious fix.
-- **Checks:** Before publishing, run `python3 scripts/validate-package.py`, `npx skills add . --list`, and `claude plugin validate .`.
+- **Checks:** Before publishing, run `python3 scripts/validate-package.py`, list the package with the relevant Skills CLI, and validate any provider-specific manifests that are present.
 
 ## Writing style
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Technical writing"
+  short_description: "Improve papers and technical documents for clarity and rigor"
+  default_prompt: "Use $technical-writing to improve this paper or technical document."

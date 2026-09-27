@@ -1,0 +1,4 @@
+interface:
+  display_name: "Researching guidelines"
+  short_description: "Plan experiments with clear hypotheses and traceable results"
+  default_prompt: "Use $researching-guidelines to plan or document this research experiment."

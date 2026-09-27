@@ -1,5 +1,5 @@
 ---
-name: clearwriter
+name: clear-writing
 description: |
   Rewrite AI-sounding text so it reads naturally without changing what it says.
   Use when editing or reviewing prose for AI tells: not-X-but-Y contrasts, one-line
@@ -10,7 +10,7 @@ metadata:
   version: "1.1.1"
 ---
 
-# Clearwriter: remove AI writing patterns
+# Clear writing: remove AI writing patterns
 
 Rewrite AI-sounding text so it reads naturally, not like a chatbot. Keep what it says. Do not make anything up.
 

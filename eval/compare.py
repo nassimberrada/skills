@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare two Clearwriter evaluation runs."""
+"""Compare two skill evaluation runs."""
 
 from __future__ import annotations
 

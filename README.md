@@ -1,38 +1,38 @@
-# Clearwriter
+# Agent skills
 
-[![skills.sh installs](https://skills.sh/b/nassimberrada/clearwriter)](https://skills.sh/nassimberrada/clearwriter)
+[![skills.sh installs](https://skills.sh/b/nassimberrada/skills)](https://skills.sh/nassimberrada/skills)
 
-Clearwriter rewrites text so it is clear, natural, pleasant to read, and logically consistent without changing what it says. Because it is just Markdown, it works with any agent that supports skills.
+This repository is a collection of portable agent skills. It currently includes the Clear Writing skill for clear, natural, logically consistent prose, Researching Guidelines for experiment planning, and Technical Writing for research papers and technical documents.
 
 This repository was built on top of [blader/humanizer](https://github.com/blader/humanizer).
 
 ## Installation
 
-Install Clearwriter with the Skills CLI:
+Install this skills collection with the Skills CLI:
 
 ```bash
-npx skills add nassimberrada/clearwriter --global
+npx skills add nassimberrada/skills --global
 ```
 
-Leave off `--global` to install Clearwriter only in the current project. Add `--agent <name>` or `--agent '*'` to choose which agents receive it, then reload their skills. The skill answers to `/clearwriter`.
+Leave off `--global` to install the skills only in the current project. Add `--agent <name>` or `--agent '*'` to choose which agents receive them, then reload their skills. Invoke a skill by its name, such as `/clear-writing`, `/researching-guidelines`, or `/technical-writing`.
 
 Claude Code 2.1.142 or newer can install the plugin instead:
 
 ```text
-/plugin marketplace add nassimberrada/clearwriter
-/plugin install clearwriter@clearwriter
+/plugin marketplace add nassimberrada/skills
+/plugin install skills@skills
 ```
 
-The plugin answers to `/clearwriter:clearwriter`.
+The plugin exposes the skills using their individual names.
 
-In Claude Desktop, download this repository as a ZIP and upload it as a skill. For a manual install, copy `SKILL.md` into the agent's skill folder.
+In Claude Desktop, download this repository as a ZIP and upload the package. For a manual install, copy the skill directory you need from `skills/` into the agent's skill folder.
 
 ## Usage
 
-Call the skill directly:
+Call a skill directly:
 
 ```
-/clearwriter
+/clear-writing
 
 [paste your text here]
 ```
@@ -43,22 +43,40 @@ Or ask in plain language:
 Please make this text clear, natural, and logically consistent: [your text]
 ```
 
-To rewrite a file, give Clearwriter its path:
+To rewrite a file, give Clear Writing its path:
 
 ```
 Rewrite the prose in docs/launch-post.md
 ```
 
+## Skills in this repository
+
+| Skill | Use it for |
+|---|---|
+| `clear-writing` | Clear, plain, technically precise, logically consistent prose |
+| `researching-guidelines` | Research contexts, hypotheses, fast test modes, traces, and experiment journals |
+| `technical-writing` | Research papers and technical documents with clear claims, definitions, evidence, and structure |
+
+Each skill is self-contained under `skills/<skill-name>/`. Add a new directory with a `SKILL.md`, optional provider metadata, and a matching case file under `eval/cases/`.
+
+Evaluate any skill with the shared harness:
+
+```bash
+python3 eval/run.py --skill researching-guidelines --version working --label candidate
+python3 eval/run.py --skill technical-writing --version working --label candidate
+python3 eval/compare.py eval/runs/researching-guidelines/v1.0.0 eval/runs/researching-guidelines/candidate
+```
+
 ## How it works
 
-A language model writes whatever is most likely to come next, so by default it makes the choice that fits the widest range of readers and subjects. A person chooses for one reader and one subject. Every tell Clearwriter looks for is a form of that default choice: a sentence that signals importance instead of adding a fact, rhythm or formatting applied by rule, an ordinary fact dressed as a pivotal one, or text left over from the chat.
+A language model writes whatever is most likely to come next, so by default it makes the choice that fits the widest range of readers and subjects. A person chooses for one reader and one subject. Every tell Clear Writing looks for is a form of that default choice: a sentence that signals importance instead of adding a fact, rhythm or formatting applied by rule, an ordinary fact dressed as a pivotal one, or text left over from the chat.
 
 > "LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely result that applies to the widest variety of cases."
 > Wikipedia, ["Signs of AI writing"](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing)
 
-Clearwriter marks every tell it finds, strongest first. It drafts a rewrite without treating the original structure as fixed, checks the draft against the patterns and the original claims, and then writes the final version. It does not make things up. A name, number, date, quote, citation, or other factual detail must come from the source or the writer, and if a sentence needs a detail that is missing, Clearwriter asks instead of inventing one.
+Clear Writing marks every tell it finds, strongest first. It drafts a rewrite without treating the original structure as fixed, checks the draft against the patterns and the original claims, and then writes the final version. It does not make things up. A name, number, date, quote, citation, or other factual detail must come from the source or the writer, and if a sentence needs a detail that is missing, Clear Writing asks instead of inventing one.
 
-When you paste text, Clearwriter returns the final rewrite by default. It can also show its draft and critique when requested. Point it at a file and it changes only the prose, leaving code, data, frontmatter, and link targets alone. It preserves stated opinions and uncertainty without adding personality or unsupported claims. Technical and reference prose stays neutral and plain.
+When you paste text, Clear Writing returns the final rewrite by default. It can also show its draft and critique when requested. Point it at a file and it changes only the prose, leaving code, data, frontmatter, and link targets alone. It preserves stated opinions and uncertainty without adding personality or unsupported claims. Technical and reference prose stays neutral and plain.
 
 ## The 25 patterns
 
@@ -150,7 +168,7 @@ The following examples come from the evaluation set. They show the additional te
 
 - **1.1.1** - Added compact clear-technical-writing guidance based on ASD-STE100 and Google Technical Writing principles.
 - **1.1.0** - Added explicit guidance for brevity, plain language, technical precision, and logical coherence. The default pasted-text mode now returns only the final rewrite.
-- **1.0.0** - Initial Clearwriter baseline for clear, natural, and logically consistent writing.
+- **1.0.0** - Initial Clear Writing baseline for clear, natural, and logically consistent writing.
 
 </details>
 

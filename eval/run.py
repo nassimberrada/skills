@@ -16,7 +16,7 @@ import re
 
 
 ROOT = Path(__file__).resolve().parent.parent
-CASES_PATH = Path(__file__).resolve().parent / "cases.jsonl"
+CASES_DIR = Path(__file__).resolve().parent / "cases"
 
 
 def read_cases(path: Path) -> list[dict[str, object]]:
@@ -36,21 +36,23 @@ def read_cases(path: Path) -> list[dict[str, object]]:
     return cases
 
 
-def skill_for_ref(ref: str) -> str:
+def skill_for_ref(ref: str, name: str) -> str:
     if ref in {"working", "current", "."}:
-        return (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
     path = Path(ref)
+    if path.is_dir():
+        path = path / "SKILL.md"
     if path.is_file():
         return path.read_text(encoding="utf-8")
     result = subprocess.run(
-        ["git", "show", f"{ref}:SKILL.md"],
+        ["git", "show", f"{ref}:skills/{name}/SKILL.md"],
         cwd=ROOT,
         text=True,
         capture_output=True,
         check=False,
     )
     if result.returncode:
-        raise SystemExit(f"Could not read SKILL.md from git ref {ref!r}: {result.stderr.strip()}")
+        raise SystemExit(f"Could not read skills/{name}/SKILL.md from git ref {ref!r}: {result.stderr.strip()}")
     return result.stdout
 
 
@@ -61,13 +63,14 @@ def skill_name(skill: str) -> str:
     return match.group(1).strip('"\'')
 
 
-def prompt_for(name: str, text: str) -> str:
+def prompt_for(name: str, case: dict[str, object]) -> str:
+    request = str(case.get("request", "Rewrite the following text using the selected skill."))
     return (
         f"${name}\n\n"
-        "Rewrite the following text using the selected skill. Return only the final rewrite. "
+        f"{request} Return only the final answer. "
         "Do not explain your process or add a critique. Preserve all supported facts and do not invent details.\n\n"
-        "Text to rewrite:\n"
-        f"{text}"
+        "Input:\n"
+        f"{case['input']}"
     )
 
 
@@ -90,7 +93,7 @@ def run_case(codex_bin: str, skill: str, case: dict[str, object], args: argparse
             f"model_reasoning_effort={args.reasoning_effort}",
             "--output-last-message",
             str(output_path),
-            prompt_for(name, str(case["input"])),
+            prompt_for(name, case),
         ]
         if args.dry_run:
             print("$", " ".join(command))
@@ -120,10 +123,11 @@ def run_case(codex_bin: str, skill: str, case: dict[str, object], args: argparse
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", required=True, help="Git ref containing SKILL.md, or a path to SKILL.md")
-    parser.add_argument("--label", required=True, help="Directory name for the saved run")
-    parser.add_argument("--cases", type=Path, default=CASES_PATH)
-    parser.add_argument("--output-root", type=Path, default=Path(__file__).resolve().parent / "runs")
+    parser.add_argument("--skill", required=True, help="Skill directory name under skills/")
+    parser.add_argument("--version", required=True, help="Git ref containing the skill, or a path to its directory/file")
+    parser.add_argument("--label", required=True, help="Version label for the saved run")
+    parser.add_argument("--cases", type=Path)
+    parser.add_argument("--output-root", type=Path)
     parser.add_argument("--codex-bin", default=os.environ.get("CODEX_BIN", "codex"))
     parser.add_argument("--model", default="gpt-5.6-luna")
     parser.add_argument("--reasoning-effort", default="low")
@@ -132,13 +136,15 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    cases = read_cases(args.cases)
+    cases_path = args.cases or CASES_DIR / f"{args.skill}.jsonl"
+    output_root = args.output_root or Path(__file__).resolve().parent / "runs" / args.skill
+    cases = read_cases(cases_path)
     if args.case_id:
         cases = [case for case in cases if case["id"] == args.case_id]
         if not cases:
             raise SystemExit(f"No case with ID {args.case_id!r} found in {args.cases}")
-    skill = skill_for_ref(args.version)
-    run_dir = args.output_root / args.label
+    skill = skill_for_ref(args.version, args.skill)
+    run_dir = output_root / args.label
     if run_dir.exists() and not args.dry_run and not args.append:
         raise SystemExit(f"Output directory already exists: {run_dir}; choose another --label")
     if not args.dry_run:
@@ -146,10 +152,13 @@ def main() -> int:
         metadata_path = run_dir / "metadata.json"
         if not (args.append and metadata_path.exists()):
             metadata = {
-                "version": args.version,
+                "skill": args.skill,
+                "version": args.label,
+                "skill_ref": args.version,
+                "cases": str(cases_path),
                 "model": args.model,
                 "reasoning_effort": args.reasoning_effort,
-                "case_count": len(read_cases(args.cases)),
+                "case_count": len(read_cases(cases_path)),
                 "started_at": datetime.now(timezone.utc).isoformat(),
             }
             metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
@@ -167,11 +176,14 @@ def main() -> int:
 
     if not args.dry_run:
         output_file = run_dir / "outputs.jsonl"
-        existing = output_file.read_text(encoding="utf-8") if args.append and output_file.exists() else ""
+        records: dict[str, dict[str, object]] = {}
+        if args.append and output_file.exists():
+            records.update({item["id"]: item for item in (json.loads(line) for line in output_file.read_text(encoding="utf-8").splitlines() if line.strip())})
+        records.update({output["id"]: output for output in outputs})
         output_file.write_text(
-            existing + "".join(json.dumps(output, ensure_ascii=False) + "\n" for output in outputs), encoding="utf-8"
+            "".join(json.dumps(output, ensure_ascii=False) + "\n" for output in records.values()), encoding="utf-8"
         )
-        completed = sum(1 for line in output_file.read_text(encoding="utf-8").splitlines() if line.strip())
+        completed = len(records)
         (run_dir / "summary.json").write_text(json.dumps({"case_count": completed}, indent=2) + "\n", encoding="utf-8")
         print(f"Saved {len(outputs)} outputs to {run_dir}")
     return 0
