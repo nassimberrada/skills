@@ -1,20 +1,20 @@
 # Agent skills
 
-[![skills.sh installs](https://skills.sh/b/nassimberrada/skills)](https://skills.sh/nassimberrada/skills)
+This repository is a collection of portable agent skills. It currently includes:
 
-This repository is a collection of portable agent skills. It currently includes the Clear Writing skill for clear, natural, logically consistent prose, Researching Guidelines for experiment planning, and Technical Writing for research papers and technical documents.
-
-This repository was built on top of [blader/humanizer](https://github.com/blader/humanizer).
+- `clear-writing` for clear, plain, logically consistent prose;
+- `researching-guidelines` for planning and documenting research experiments;
+- `technical-writing` for research papers and technical documents.
 
 ## Installation
 
-Install this skills collection with the Skills CLI:
+Install the collection with the Skills CLI:
 
 ```bash
 npx skills add nassimberrada/skills --global
 ```
 
-Leave off `--global` to install the skills only in the current project. Add `--agent <name>` or `--agent '*'` to choose which agents receive them, then reload their skills. Invoke a skill by its name, such as `/clear-writing`, `/researching-guidelines`, or `/technical-writing`.
+Leave off `--global` to install the skills only in the current project. Add `--agent <name>` or `--agent '*'` to choose which agents receive them, then reload their skills.
 
 Claude Code 2.1.142 or newer can install the plugin instead:
 
@@ -23,154 +23,46 @@ Claude Code 2.1.142 or newer can install the plugin instead:
 /plugin install skills@skills
 ```
 
-The plugin exposes the skills using their individual names.
+For a manual install, copy the skill directory you need from `skills/` into the agent's skill folder. Each skill's README describes its purpose and design.
 
-In Claude Desktop, download this repository as a ZIP and upload the package. For a manual install, copy the skill directory you need from `skills/` into the agent's skill folder.
+## Repository structure
 
-## Usage
+Each skill is self-contained:
 
-Call a skill directly:
-
-```
-/clear-writing
-
-[paste your text here]
-```
-
-Or ask in plain language:
-
-```
-Please make this text clear, natural, and logically consistent: [your text]
+```text
+skills/<skill-name>/
+├── SKILL.md              # Agent instructions
+├── README.md             # Principles and design notes
+└── agents/openai.yaml    # Optional provider metadata
 ```
 
-To rewrite a file, give Clear Writing its path:
+Evaluation cases live in `eval/cases/<skill-name>.jsonl`, and saved runs live in `eval/runs/<skill-name>/<version>/`.
 
-```
-Rewrite the prose in docs/launch-post.md
-```
+## Evaluation
 
-## Skills in this repository
-
-| Skill | Use it for |
-|---|---|
-| `clear-writing` | Clear, plain, technically precise, logically consistent prose |
-| `researching-guidelines` | Research contexts, hypotheses, fast test modes, traces, and experiment journals |
-| `technical-writing` | Research papers and technical documents with clear claims, definitions, evidence, and structure |
-
-Each skill is self-contained under `skills/<skill-name>/`. Add a new directory with a `SKILL.md`, optional provider metadata, and a matching case file under `eval/cases/`.
-
-Evaluate any skill with the shared harness:
+Use the shared harness to run a skill against its cases:
 
 ```bash
+python3 eval/run.py --skill clear-writing --version working --label candidate
 python3 eval/run.py --skill researching-guidelines --version working --label candidate
 python3 eval/run.py --skill technical-writing --version working --label candidate
-python3 eval/compare.py eval/runs/researching-guidelines/v1.0.0 eval/runs/researching-guidelines/candidate
 ```
 
-## How it works
+Compare two runs for the same skill:
 
-A language model writes whatever is most likely to come next, so by default it makes the choice that fits the widest range of readers and subjects. A person chooses for one reader and one subject. Every tell Clear Writing looks for is a form of that default choice: a sentence that signals importance instead of adding a fact, rhythm or formatting applied by rule, an ordinary fact dressed as a pivotal one, or text left over from the chat.
+```bash
+python3 eval/compare.py eval/runs/clear-writing/v1.0.0 eval/runs/clear-writing/candidate
+```
 
-> "LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely result that applies to the widest variety of cases."
-> Wikipedia, ["Signs of AI writing"](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing)
+See [`eval/README.md`](eval/README.md) for options and the case format.
 
-Clear Writing marks every tell it finds, strongest first. It drafts a rewrite without treating the original structure as fixed, checks the draft against the patterns and the original claims, and then writes the final version. It does not make things up. A name, number, date, quote, citation, or other factual detail must come from the source or the writer, and if a sentence needs a detail that is missing, Clear Writing asks instead of inventing one.
+## Adding a skill
 
-When you paste text, Clear Writing returns the final rewrite by default. It can also show its draft and critique when requested. Point it at a file and it changes only the prose, leaving code, data, frontmatter, and link targets alone. It preserves stated opinions and uncertainty without adding personality or unsupported claims. Technical and reference prose stays neutral and plain.
+Create `skills/<skill-name>/SKILL.md` with frontmatter containing `name`, `description`, and `metadata.version`. Add a `README.md` explaining the skill's core principles and design, optional provider metadata, and `eval/cases/<skill-name>.jsonl`. Run:
 
-## The 25 patterns
-
-The patterns are numbered by strength and frequency. The first five justify an edit on a single sighting. Patterns marked *weak alone* count only when several tells share a passage, because a careful writer may use any one of them on purpose.
-
-### A. Staging instead of stating
-
-| # | Pattern | Before | After |
-|---|---------|--------|-------|
-| 1 | **Not X but Y** | "It's not just X, it's Y", "This doesn't mean X. It means Y." | State the point directly |
-| 2 | **One-line closers and dramatic fragments** | "That is the real win." after every section; "No prior. No nostalgia." | Cut the closer that repeats; merge fragments into a specific claim |
-| 3 | **Sayings that sound deep** | "At its core, what matters is...", "Symmetry is the language of trust" | Replace the saying with the specific claim |
-| 4 | **Staged run-up before the point** | "Let's dive in", "Honestly? It depends..." | Remove the run-up and state the point |
-| 5 | **Arguing with no one** | "This isn't mainly about...", "A tempting approach would be..." | Remove the unraised objection or fake option; keep any real claim |
-
-### B. Rhythm by rule
-
-| # | Pattern | Before | After |
-|---|---------|--------|-------|
-| 6 | **Forced triads** | "innovation, inspiration, and insights"; three examples plus a lesson | Use the number of items the meaning needs |
-| 7 | **Repeated sentence openings** | "She noted... She noted... She filed..." | Merge the sentences or change the subject |
-| 8 | **Dashes as the universal connector** (*weak alone*) | "institutions—not the people—yet this continues—" | Use periods, commas, colons, or parentheses; match a sample that uses dashes |
-| 9 | **Stacked qualifiers** (*weak alone*) | "could potentially possibly be argued" | Keep only qualifiers the source supports |
-| 10 | **Hyphenated pairs everywhere** (*weak alone*) | "the team is cross-functional" | Keep only the hyphens grammar needs |
-| 11 | **Passive voice and missing subjects** (*weak alone*) | "No configuration file needed" | Name the actor when that helps |
-
-### C. Inflation and borrowed authority
-
-| # | Pattern | Before | After |
-|---|---------|--------|-------|
-| 12 | **Overused AI words** | "delve... testament... landscape... showcasing" | Use plain words; the list in SKILL.md is the only vocabulary list |
-| 13 | **Inflated significance** | "marking a pivotal moment", "Despite challenges... continues to thrive", "The future looks bright" | Keep the fact and drop the significance; end on the last concrete fact |
-| 14 | **Vague connection or association** | "associated with the leadership of", "in connection with" | State the relationship the source gives |
-| 15 | **Shallow -ing riders** | "symbolizing... reflecting... showcasing..." | Keep only what the source supports |
-| 16 | **Sales language** | "nestled within the breathtaking region" | State what the thing is |
-| 17 | **Borrowed authority** | "Experts believe...", "cited in NYT, BBC, FT, and The Hindu" | Name a real source and what it said, or remove the claim or list |
-| 18 | **Avoiding is, are, and has** | "serves as... features... boasts" | "is... has" |
-
-### D. Formatting by rule
-
-| # | Pattern | Before | After |
-|---|---------|--------|-------|
-| 19 | **Bold as decoration** | "**OKRs**, **KPIs**"; "**Performance:** Performance improved" | Remove the bold; turn a labeled list into prose |
-| 20 | **Decorative headings** | "Strategic Negotiations And Partnerships", "🚀 Launch Phase:" | Sentence case; remove emojis and arrows |
-| 21 | **Curly quotation marks** (*weak alone*) | `said “the project”` | `said "the project"` |
-
-### E. Leftovers from the chat and the draft
-
-| # | Pattern | Before | After |
-|---|---------|--------|-------|
-| 22 | **Chatbot residue** | "Great question! ... I hope this helps!" | Remove the wrapper and keep the content |
-| 23 | **Knowledge-limit disclaimers and guesses** | "While details are limited in available sources, it appears..." | State what the source shows, or remove the sentence |
-| 24 | **A heading repeated in the first sentence** | "## Performance" + "Speed matters." | Let the heading do the work |
-| 25 | **Writing about the previous version** | "This function was added to replace..." | Describe what it does now |
-
-## Full example
-
-The following examples come from the evaluation set. They show the additional technical-writing goals: direct wording, explicit conditions, and clear order.
-
-**Before:**
-> The system utilizes a robust mechanism for ensuring reliable processing of requests. This mechanism is designed to operate across multiple service instances and to maintain a consistent level of availability during periods of increased demand. Additionally, the system provides enhanced visibility into the overall operational landscape by collecting status information from each instance and presenting it to operators in a centralized view. These capabilities are important because they allow the team to identify failures sooner and understand whether a problem affects one service or the entire platform.
-
-**After:**
-> The system reliably processes requests across multiple service instances and maintains availability during high demand. It collects status from each instance and displays it in a centralized view, helping the team detect failures sooner and determine whether a problem affects one service or the entire platform.
-
-**Before:**
-> Caching reduces repeated work, which can improve response time when the requested data is already in the cache. It can also reduce load on the database during periods of high traffic. Therefore, enabling caching always makes every system faster, regardless of cache invalidation, memory limits, stale data, or the cost of filling the cache.
-
-**After:**
-> Caching reduces repeated work and can improve response times when the requested data is already cached. It can also reduce database load during heavy traffic. However, caching does not always make a system faster; its effects depend on cache invalidation, memory limits, stale data, and the cost of populating the cache.
-
-**Before:**
-> The deployment process is highly optimized and designed to maximize reliability across the production environment. First, the service builds the image from the current source revision and stores the resulting artifact. Then it runs the automated test suite against that image, including checks for configuration and integration failures. Finally, it deploys the image only after the tests pass, which prevents a failed build from being promoted. The deployment system records the revision and test result so the team can trace what was released.
-
-**After:**
-> The system builds an image from the current source revision and stores the artifact. It runs the automated test suite against that image, including configuration and integration checks. If the tests pass, it deploys the image. The system records the revision and test result so the team can trace each release.
-
-## Sources
-
-- [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) is the source for the pattern list.
-- [WikiProject AI Cleanup](https://en.wikipedia.org/wiki/Wikipedia:WikiProject_AI_Cleanup) maintains the page.
-- [ASD-STE100 Simplified Technical English](https://www.asd-ste100.org/) informs the technical-language principles.
-- [Google Technical Writing](https://developers.google.com/tech-writing) informs the guidance on clear technical explanations.
-
-## Version history
-
-<details>
-<summary>Show release notes</summary>
-
-- **1.1.1** - Added compact clear-technical-writing guidance based on ASD-STE100 and Google Technical Writing principles.
-- **1.1.0** - Added explicit guidance for brevity, plain language, technical precision, and logical coherence. The default pasted-text mode now returns only the final rewrite.
-- **1.0.0** - Initial Clear Writing baseline for clear, natural, and logically consistent writing.
-
-</details>
+```bash
+python3 scripts/validate-package.py
+```
 
 ## License
 
